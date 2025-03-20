@@ -15,19 +15,13 @@ class TestTextNode(unittest.TestCase):
     def test_text_eq(self):
         node = TextNode("This is a text node", TextType.BOLD, "lul.com")
         node2 = TextNode("This is a text node", TextType.BOLD, "lul.com")
-        if self.assertEqual(node.text, node2.text):
-            print("Text is equal")
-            return True
-        else:
-            return False
+        self.assertEqual(node.text, node2.text, msg="Text is Equal")
         
     def test_text_type_eq(self):
         node = TextNode("This is a text node", TextType.BOLD, "lul.com")
         node2 = TextNode("This is (probably) a text node", TextType.BOLD, "lul.com")
-        if self.assertEqual(node.text_type, node2.text_type):
-            return "Text type is equal"
-        else:
-            return False
+        self.assertEqual(node.text_type, node2.text_type, msg="Text type is equal")
+
     def test_err_on_type_mismatch(self):
         self.assertRaises(ValueError, TextNode, "This is a text node", "bold")
 

@@ -7,7 +7,7 @@ from inline_markdown import (
     text_to_textnodes
 )
 import unittest
-from textnode import TextNode, TextType, text_node_to_html_node
+from textnode import TextNode, TextType
 
 class TestInlineMarkdown(unittest.TestCase):
 
@@ -93,7 +93,7 @@ class TestInlineMarkdown(unittest.TestCase):
                     "second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"
                 ),
             ],
-            new_nodes,
+            new_nodes
         )
             
     def test_split_links(self):
@@ -111,24 +111,55 @@ class TestInlineMarkdown(unittest.TestCase):
                         "second link", TextType.LINK, "https://i.imgur.com/3elNhQu.png"
                     ),
                 ],
-                new_nodes,
+                new_nodes
         )
     def test_text_to_textnodes(self):
-           sample_node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
-           new_nodes = text_to_textnodes(sample_node)
-           self.assertListEqual([
-                TextNode("This is ", TextType.TEXT),
-                TextNode("text", TextType.BOLD),
-                TextNode(" with an ", TextType.TEXT),
-                TextNode("italic", TextType.ITALIC),
-                TextNode(" word and a ", TextType.TEXT),
-                TextNode("code block", TextType.CODE),
-                TextNode(" and an ", TextType.TEXT),
-                TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
-                TextNode(" and a ", TextType.TEXT),
-                TextNode("link", TextType.LINK, "https://boot.dev")
-           ], 
-           new_nodes
-           )
-    if __name__ == "__main__":
-        unittest.main()
+        sample_node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        new_nodes = text_to_textnodes(sample_node)
+        self.assertListEqual([
+            TextNode("This is ", TextType.TEXT),
+            TextNode("text", TextType.BOLD),
+            TextNode(" with an ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word and a ", TextType.TEXT),
+            TextNode("code block", TextType.CODE),
+            TextNode(" and an ", TextType.TEXT),
+            TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+            TextNode(" and a ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://boot.dev")
+        ], 
+        new_nodes
+        )
+
+    def test_text_to_textnodes_basic(self):
+        text = "This is **bold** text with _italic_"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD), 
+            TextNode(" text with ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC)
+        ]
+        self.assertListEqual(nodes, expected)
+
+    def test_text_to_textnodes_nested(self):
+        text = "**Bold _italic_ text**"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("Bold ", TextType.BOLD),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text", TextType.BOLD)
+        ]
+        self.assertListEqual(nodes, expected)
+
+    def test_text_to_textnodes_code(self):
+        text = "Text with `code`"
+        nodes = text_to_textnodes(text)
+        expected = [
+            TextNode("Text with ", TextType.TEXT),
+            TextNode("code", TextType.CODE)
+        ]
+        self.assertListEqual(nodes, expected)
+
+if __name__ == "__main__":
+    unittest.main()

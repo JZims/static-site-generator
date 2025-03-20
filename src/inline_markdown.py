@@ -12,6 +12,8 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
         # Split words by delimiter
         split_nodes=[]
         word_sections = node.text.split(delimiter)
+        if len(word_sections) % 2 ==0:
+            raise ValueError("invalid markdown, formatted section not closed")
         for i in range(len(word_sections)):
             if word_sections[i] == "":
                 continue
@@ -26,76 +28,111 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 def split_nodes_image(old_node):
     new_nodes = []
     for node in old_node:
-        found_images=extract_markdown_images(node)
-        if not found_images:
-            new_nodes.append(TextNode(node, TextType.TEXT))
-        else:
-        # Unpack furst tuple
-            img_alt, img_url = found_images[0]
-        # Split Node on this info
-            split_node = node.text.split(f"![{img_alt}]({img_url})", 1)
-            first_half = split_node[0]
-            second_half = split_node[1] if len(split_node[1]) > 1 else ""
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
 
-            if first_half.strip():
+        original_text = node.text
+        found_images=extract_markdown_images(original_text)
+
+        if len(found_images) == 0:
+            new_nodes.append(TextNode(node.text, TextType.TEXT))
+            continue
+
+        for image in found_images:
+            img_alt, img_url = image
+            sections = node.text.split(f"![{img_alt}]({img_url})", 1)
+
+            first_half = sections[0]
+            second_half = sections[1] if len(sections[1]) > 1 else ""
+
+            if len(sections) != 2:
+                raise ValueError("invalid markdown, image section not closed")
+            
+            if first_half != "":
                 new_nodes.append(TextNode(first_half, TextType.TEXT))
 
             new_nodes.append(TextNode(img_alt, TextType.IMAGE, img_url))
-            
-        # If second half of node exists, format it into a node and recurse
-            if second_half.strip():
-                remaining_node = TextNode(second_half, TextType.TEXT)
-                new_nodes += split_nodes_image([remaining_node])
+            original_text = second_half
+
+        if original_text != "":
+            new_nodes.append(TextNode(original_text, TextType.TEXT))
+    
     return new_nodes
 
-def split_nodes_link(old_node):
+def split_nodes_link(old_nodes):
     new_nodes = []
-    for node in old_node:
-        found_links=extract_markdown_link(node)
-        if not found_links:
-            new_nodes.append(TextNode(node, TextType.TEXT))
-        else:
-        # Unpack furst tuple
-            link_alt, link_url = found_links[0]
-        # Split Node on this info
-            split_node = node.text.split(f"[{link_alt}]({link_url})", 1)
-            first_half = split_node[0]
-            second_half = split_node[1] if len(split_node[1]) > 1 else ""
+    for node in old_nodes:
+        if node.text_type != TextType.TEXT:
+            new_nodes.append(node)
+            continue
 
-            if first_half.strip():
+        original_text = node.text
+        found_links=extract_markdown_link(original_text)
+
+        if len(found_links) == 0:
+            new_nodes.append(TextNode(node.text, TextType.TEXT))
+            continue
+
+        for link in found_links:
+            link_alt, link_url = link
+            sections = node.text.split(f"[{link_alt}]({link_url})", 1)
+
+            first_half = sections[0]
+            second_half = sections[1] if len(sections[1]) > 1 else ""
+
+            if len(sections) != 2:
+                raise ValueError("invalid markdown, link section not closed")
+            
+            if first_half != "":
                 new_nodes.append(TextNode(first_half, TextType.TEXT))
 
             new_nodes.append(TextNode(link_alt, TextType.LINK, link_url))
+            original_text = second_half
             
-        # If second half of node exists, format it into a node and recurse
-            if second_half.strip():
-                remaining_node = TextNode(second_half, TextType.TEXT)
-                new_nodes += split_nodes_link([remaining_node])
+        if original_text != "":
+            new_nodes.append(TextNode(original_text, TextType.TEXT))
+    
     return new_nodes
 
 def extract_markdown_images(sample_text):
-    img_node_alt_text= re.findall(r"\!\[(.*?)\]", sample_text.text)
-    img_node_url = re.findall(r"\((https?://[^\s)]+)\)", sample_text.text)
+    img_node_alt_text= re.findall(r"\!\[(.*?)\]", sample_text)
+    img_node_url = re.findall(r"\((https?://[^\s)]+)\)", sample_text)
 
     md_images = list(zip(img_node_alt_text, img_node_url))
     return md_images
     
 def extract_markdown_link(sample_text):
-    link_node_alt_text= re.findall(r"\[(.*?)\]", sample_text[0][0])
-    link_node_url= re.findall(r"\((https?://[^\s)]+)\)", sample_text[0][1])
+    link_node_alt_text= re.findall(r"\[(.*?)\]", sample_text)
+    link_node_url= re.findall(r"\((https?://[^\s)]+)\)", sample_text)
     md_links = list(zip(link_node_alt_text, link_node_url))
     return md_links
 
 def text_to_textnodes(text):
     nodes=[TextNode(text, TextType.TEXT)]
 
-    # For bold nodes using split_nodes_delimiter
     nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
-    
-    # For italic nodes
     nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
-    
-    # For code nodes
     nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
     
     return nodes
+
+
+# sample_node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+# print(text_to_textnodes(sample_node))
+
+# [
+#     TextNode(This is , ('text',), None), 
+#     TextNode(text, ('bold',), None), 
+#     TextNode( with an , ('text',), None), 
+#     TextNode(italic, ('italic',), None), 
+#     TextNode( word and a , ('text',), None), 
+#     TextNode(code block, ('code',), None), 
+#     TextNode( and an , ('text',), None), 
+#     TextNode(obi wan image, ('image',), https://i.imgur.com/fJRm4Vk.jpeg), 
+#     TextNode( and a , ('text',), None), 
+#     TextNode(link, ('link',), https://boot.dev)
+# ]
