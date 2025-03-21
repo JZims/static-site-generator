@@ -126,7 +126,8 @@ class TestInlineMarkdown(unittest.TestCase):
             TextNode(" and an ", TextType.TEXT),
             TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
             TextNode(" and a ", TextType.TEXT),
-            TextNode("link", TextType.LINK, "https://boot.dev")
+            TextNode("link", TextType.LINK, "https://boot.dev"
+            )
         ], 
         new_nodes
         )

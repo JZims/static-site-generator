@@ -6,22 +6,32 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
     # Iterate through old nodes
     for node in old_nodes:
-        if node.text_type != TextType.TEXT:
-            new_nodes.append(node)
+        if node.text_type != TextType.TEXT and node.text_type != text_type:
+            inner_splits = node.text.split(delimiter)
+            if len(inner_splits) > 1:
+                current_type = node.text_type
+                for i, split in enumerate(inner_splits):
+                    if split == "":
+                        continue
+                    if  1 % 2 == 0:
+                        new_nodes.append(TextNode(split, current_type))
+                    else:
+                        new_nodes.append(TextNode(split, text_type))
+            else:
+                new_nodes.append(node)
             continue
-        # Split words by delimiter
-        split_nodes=[]
+
         word_sections = node.text.split(delimiter)
         if len(word_sections) % 2 ==0:
             raise ValueError("invalid markdown, formatted section not closed")
-        for i in range(len(word_sections)):
-            if word_sections[i] == "":
+        for i, split in enumerate(word_sections):
+            if split == "":
                 continue
             if i % 2 == 0:
-                split_nodes.append(TextNode(word_sections[i], TextType.TEXT))
+                new_nodes.append(TextNode(split, TextType.TEXT))
             else:
-                split_nodes.append(TextNode(word_sections[i], text_type))
-        new_nodes.extend(split_nodes) 
+                new_nodes.append(TextNode(split, text_type))
+
     return new_nodes
     
 
@@ -41,7 +51,7 @@ def split_nodes_image(old_node):
 
         for image in found_images:
             img_alt, img_url = image
-            sections = node.text.split(f"![{img_alt}]({img_url})", 1)
+            sections = original_text.split(f"![{img_alt}]({img_url})", 1)
 
             first_half = sections[0]
             second_half = sections[1] if len(sections[1]) > 1 else ""
@@ -76,7 +86,7 @@ def split_nodes_link(old_nodes):
 
         for link in found_links:
             link_alt, link_url = link
-            sections = node.text.split(f"[{link_alt}]({link_url})", 1)
+            sections = original_text.split(f"[{link_alt}]({link_url})", 1)
 
             first_half = sections[0]
             second_half = sections[1] if len(sections[1]) > 1 else ""
@@ -121,18 +131,11 @@ def text_to_textnodes(text):
     return nodes
 
 
-# sample_node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
-# print(text_to_textnodes(sample_node))
+sample_text = "**Bold _italic_ text**"
+print(text_to_textnodes(sample_text))
 
 # [
-#     TextNode(This is , ('text',), None), 
-#     TextNode(text, ('bold',), None), 
-#     TextNode( with an , ('text',), None), 
+#     TextNode(Bold , ('italic',), None), 
 #     TextNode(italic, ('italic',), None), 
-#     TextNode( word and a , ('text',), None), 
-#     TextNode(code block, ('code',), None), 
-#     TextNode( and an , ('text',), None), 
-#     TextNode(obi wan image, ('image',), https://i.imgur.com/fJRm4Vk.jpeg), 
-#     TextNode( and a , ('text',), None), 
-#     TextNode(link, ('link',), https://boot.dev)
+#     TextNode( text, ('italic',), None)
 # ]
