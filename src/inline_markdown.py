@@ -129,13 +129,3 @@ def text_to_textnodes(text):
     nodes = split_nodes_link(nodes)
     
     return nodes
-
-
-sample_text = "**Bold _italic_ text**"
-print(text_to_textnodes(sample_text))
-
-# [
-#     TextNode(Bold , ('italic',), None), 
-#     TextNode(italic, ('italic',), None), 
-#     TextNode( text, ('italic',), None)
-# ]

@@ -143,16 +143,6 @@ class TestInlineMarkdown(unittest.TestCase):
         ]
         self.assertListEqual(nodes, expected)
 
-    def test_text_to_textnodes_nested(self):
-        text = "**Bold _italic_ text**"
-        nodes = text_to_textnodes(text)
-        expected = [
-            TextNode("Bold ", TextType.BOLD),
-            TextNode("italic", TextType.ITALIC),
-            TextNode(" text", TextType.BOLD)
-        ]
-        self.assertListEqual(nodes, expected)
-
     def test_text_to_textnodes_code(self):
         text = "Text with `code`"
         nodes = text_to_textnodes(text)

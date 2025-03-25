@@ -41,9 +41,6 @@ class ParentNode(HTMLNode):
         if self.children is None:
             raise ValueError("Parent Nodes must contain at least one child node")
         
-        # Recursively unpacking ParentNodes #
-            # Edge Cases #
-            # Node has no children #
         child_html = ""
         for child in self.children:
             child_html += child.to_html()
