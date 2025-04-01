@@ -1,5 +1,5 @@
 from enum import Enum
-from htmlnode import HTMLNode, ParentNode, LeafNode
+from htmlnode import ParentNode, LeafNode
 from inline_markdown import text_to_textnodes
 from textnode import TextType, text_node_to_html_node
 import re
@@ -50,25 +50,59 @@ def text_to_children(markdown):
             child_nodes.append(text_node_to_html_node(node).to_html())
     return child_nodes
 
+def block_list_from_node(block):
+    items = list(map(lambda x: LeafNode("li", x), block[0].split("\n")))
+    list_container = ParentNode(block[1], items)
+    return list_container
+
+def block_code_into_node(block):
+    pass
+
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
     block_with_types = list(zip(blocks,map(lambda x: block_to_block_type(x).value, blocks)))
     child_nodes=[]
     wrapper = ParentNode('div', child_nodes)
-
     for block in block_with_types:
-        stylized_text = "".join(list(map(lambda x: x.to_html(), map(lambda x: text_node_to_html_node(x), text_to_textnodes(block[0])))))
-        child_nodes.append(LeafNode(block[1], stylized_text))
-        # Determine which are parent nodes and which are leaf nodes
-
+        match block[1]:
+            case "ol" | "ul":
+                child_nodes.append(block_list_from_node(block))
+            case "code":
+                child_nodes.append(block_code_into_node(block))
+            case _:
+                stylized_text = "".join(list(map(lambda x: x.to_html(), map(lambda x: text_node_to_html_node(x), text_to_textnodes(block[0])))))
+                child_nodes.append(LeafNode(block[1], stylized_text))
+   
     return wrapper.to_html()
 
 md = """
+#
+This is a heading
+# 
+
 This is **bolded** paragraph
 text in a p
 tag here
 
+- This is an
+- Unordered List
+
+1. This is
+2. An Ordered List
+
 This is another paragraph with _italic_ text and `code` here
 
 """
-print(markdown_to_html_node(md))
+with open("test.html", 'w') as f:
+    print(markdown_to_html_node(md), file=f)
+
+
+# Blocks
+
+# [
+#     ('# \nThis is a heading\n#', 'h1'),
+#     ('This is **bolded** paragraph\ntext in a p\ntag here', 'p'),
+#     ('- This is an\n- Unordered List', 'ul'),
+#     ('1. This is\n2. An Ordered List', 'ol'),
+#     ('This is another paragraph with _italic_ text and `code` here', 'p')
+# ]
