@@ -43,23 +43,33 @@ def block_to_block_type(block):
     
 
 def text_to_children(markdown):
-    all_text_nodes=text_to_textnodes(markdown)
-    child_nodes=[]
-    for node in all_text_nodes:
-        if node.text_type != TextType.TEXT:
-            child_nodes.append(text_node_to_html_node(node).to_html())
+    child_nodes=list(
+        map(lambda x: x.to_html(), 
+            map(lambda x: text_node_to_html_node(x), 
+                text_to_textnodes(markdown)
+                )
+            )
+        )
     return child_nodes
 
 def block_list_into_node(block):
-    items = list(map(lambda x: LeafNode("li", x), block[0].split("\n")))
+    formatted = "".join(text_to_children(block[0]))
+    items = list(map(lambda x: LeafNode("li", x), formatted.split("\n")))
     list_container = ParentNode(block[1], items)
     return list_container
 
-def block_code_into_node(block):
-    pass
+def block_code_into_node(block: str) -> ParentNode:
+    # Remove triple backticks while preserving line structure
+    lines = block.split('\n')
+    # Remove empty lines at start/end and triple backticks
+    code_lines = [line for line in lines if line and not line.strip() == '```']
+    # Join with newlines and preserve them in the output
+    code_content = '\n'.join(code_lines) + '\n'
+    code_node = LeafNode("code", code_content)
+    return ParentNode("pre", [code_node])
 
 def block_heading_into_node(block):
-    text=block[0]
+    text="".join(text_to_children(block[0]))
     if text.startswith("# "):
         return LeafNode("h1", text.strip("#"))
     elif text.startswith("## "):
@@ -72,6 +82,13 @@ def block_heading_into_node(block):
         return LeafNode("h5", text.strip("#"))
     elif text.startswith("###### "):
         return LeafNode("h6", text.strip("#"))
+    
+def block_para_into_node(block):
+    # Join lines with spaces and normalize whitespace
+    text = ' '.join(block[0].split('\n')).strip()
+    # Process inline markdown using existing text_to_children function
+    stylized_text = "".join(text_to_children(text))
+    return LeafNode("p", stylized_text)
 
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
@@ -85,31 +102,41 @@ def markdown_to_html_node(markdown):
             case "ol" | "ul":
                 child_nodes.append(block_list_into_node(block))
             case "code":
-                child_nodes.append(block_code_into_node(block))
+                child_nodes.append(block_code_into_node(block[0]))
+            case "p":
+                child_nodes.append(block_para_into_node(block))
             case _:
-                stylized_text = "".join(list(map(lambda x: x.to_html(), map(lambda x: text_node_to_html_node(x), text_to_textnodes(block[0])))))
+                stylized_text = "".join(text_to_children(block[0])).replace("\n", "").strip()
                 child_nodes.append(LeafNode(block[1], stylized_text))
    
-    return wrapper.to_html()
+    return wrapper
 
-md = """
-# This is a heading
+# md = """
+# This is a **bold** heading
 
-This is **bolded** paragraph
-text in a p
-tag here
+# This is **bolded** paragraph
+# text in a p
+# tag here
 
-- This is an
-- Unordered List
+# - This is _italics_ in an
+# - Unordered List
+# - with **bold** things
 
-1. This is
-2. An Ordered List
+# 1. This is
+# 2. An Ordered List
 
-This is another paragraph with _italic_ text and `code` here
+# This is another paragraph with _italic_ text and `code` here
 
-"""
+# """
 
-print(markdown_to_html_node(md))
+# md_code = """
+# ```
+# This is text that _should_ remain
+# the **same** even with inline stuff
+# ```
+# """
+
+# print(markdown_to_html_node(md))
 
 
 # Blocks
@@ -117,7 +144,8 @@ print(markdown_to_html_node(md))
 # [
 #     ('# \nThis is a heading\n#', 'h1'),
 #     ('This is **bolded** paragraph\ntext in a p\ntag here', 'p'),
-#     ('- This is an\n- Unordered List', 'ul'),
+#     ('- This is an\n- Unordered List\n- with **bold** things', 'ul'),
 #     ('1. This is\n2. An Ordered List', 'ol'),
 #     ('This is another paragraph with _italic_ text and `code` here', 'p')
 # ]
+
