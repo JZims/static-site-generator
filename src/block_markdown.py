@@ -50,13 +50,28 @@ def text_to_children(markdown):
             child_nodes.append(text_node_to_html_node(node).to_html())
     return child_nodes
 
-def block_list_from_node(block):
+def block_list_into_node(block):
     items = list(map(lambda x: LeafNode("li", x), block[0].split("\n")))
     list_container = ParentNode(block[1], items)
     return list_container
 
 def block_code_into_node(block):
     pass
+
+def block_heading_into_node(block):
+    text=block[0]
+    if text.startswith("# "):
+        return LeafNode("h1", text.strip("#"))
+    elif text.startswith("## "):
+        return LeafNode("h2", text.strip("#"))
+    elif text.startswith("### "):
+        return LeafNode("h3", text.strip("#"))
+    elif text.startswith("#### "):
+        return LeafNode("h4", text.strip("#"))
+    elif text.startswith("##### "):
+        return LeafNode("h5", text.strip("#"))
+    elif text.startswith("###### "):
+        return LeafNode("h6", text.strip("#"))
 
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
@@ -65,8 +80,10 @@ def markdown_to_html_node(markdown):
     wrapper = ParentNode('div', child_nodes)
     for block in block_with_types:
         match block[1]:
+            case "h1":
+                child_nodes.append(block_heading_into_node(block))
             case "ol" | "ul":
-                child_nodes.append(block_list_from_node(block))
+                child_nodes.append(block_list_into_node(block))
             case "code":
                 child_nodes.append(block_code_into_node(block))
             case _:
@@ -76,9 +93,7 @@ def markdown_to_html_node(markdown):
     return wrapper.to_html()
 
 md = """
-#
-This is a heading
-# 
+# This is a heading
 
 This is **bolded** paragraph
 text in a p
@@ -93,8 +108,8 @@ tag here
 This is another paragraph with _italic_ text and `code` here
 
 """
-with open("test.html", 'w') as f:
-    print(markdown_to_html_node(md), file=f)
+
+print(markdown_to_html_node(md))
 
 
 # Blocks
