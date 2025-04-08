@@ -59,11 +59,8 @@ def block_list_into_node(block):
     return list_container
 
 def block_code_into_node(block: str) -> ParentNode:
-    # Remove triple backticks while preserving line structure
     lines = block.split('\n')
-    # Remove empty lines at start/end and triple backticks
     code_lines = [line for line in lines if line and not line.strip() == '```']
-    # Join with newlines and preserve them in the output
     code_content = '\n'.join(code_lines) + '\n'
     code_node = LeafNode("code", code_content)
     return ParentNode("pre", [code_node])
@@ -84,9 +81,7 @@ def block_heading_into_node(block):
         return LeafNode("h6", text.strip("#"))
     
 def block_para_into_node(block):
-    # Join lines with spaces and normalize whitespace
     text = ' '.join(block[0].split('\n')).strip()
-    # Process inline markdown using existing text_to_children function
     stylized_text = "".join(text_to_children(text))
     return LeafNode("p", stylized_text)
 
@@ -110,42 +105,3 @@ def markdown_to_html_node(markdown):
                 child_nodes.append(LeafNode(block[1], stylized_text))
    
     return wrapper
-
-# md = """
-# This is a **bold** heading
-
-# This is **bolded** paragraph
-# text in a p
-# tag here
-
-# - This is _italics_ in an
-# - Unordered List
-# - with **bold** things
-
-# 1. This is
-# 2. An Ordered List
-
-# This is another paragraph with _italic_ text and `code` here
-
-# """
-
-# md_code = """
-# ```
-# This is text that _should_ remain
-# the **same** even with inline stuff
-# ```
-# """
-
-# print(markdown_to_html_node(md))
-
-
-# Blocks
-
-# [
-#     ('# \nThis is a heading\n#', 'h1'),
-#     ('This is **bolded** paragraph\ntext in a p\ntag here', 'p'),
-#     ('- This is an\n- Unordered List\n- with **bold** things', 'ul'),
-#     ('1. This is\n2. An Ordered List', 'ol'),
-#     ('This is another paragraph with _italic_ text and `code` here', 'p')
-# ]
-
