@@ -1,14 +1,14 @@
 
 from copy_static import copy_static_files
 import shutil, os
-from generate_page import generate_page, generate_pages_recursive
+from generate_page import generate_pages_recursive
 import sys
 
 dir_path_static = "./static"
 dir_path_public = "./docs"
 dir_path_content = "./content"
 template_path = "./template.html"
-basepath=sys.argv[0]
+basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
 
 def main():
 
