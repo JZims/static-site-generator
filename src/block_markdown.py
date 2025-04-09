@@ -8,7 +8,7 @@ class BlockType(Enum):
     PARA="p"
     HEAD="h1"
     CODE="code"
-    QUOTE="quote"
+    QUOTE="blockquote"
     UOL="ul"
     OL="ol"
 
@@ -31,7 +31,7 @@ def block_to_block_type(block):
         return BlockType("code")
     quote=re.match(r'^\>', block)
     if quote:
-        return BlockType("quote")
+        return BlockType("blockquote")
     unordered=re.match(r'^\- ', block)
     if unordered:
         return BlockType("ul")
@@ -54,7 +54,8 @@ def text_to_children(markdown):
 
 def block_list_into_node(block):
     formatted = "".join(text_to_children(block[0]))
-    items = list(map(lambda x: LeafNode("li", x), formatted.split("\n")))
+    clean_text = re.sub(r'^\d+\.\s|-\s', '', formatted)
+    items = list(map(lambda x: LeafNode("li", re.sub(r'^\d+\.\s|-\s', '', x)), clean_text.split("\n")))
     list_container = ParentNode(block[1], items)
     return list_container
 
@@ -68,22 +69,35 @@ def block_code_into_node(block: str) -> ParentNode:
 def block_heading_into_node(block):
     text="".join(text_to_children(block[0]))
     if text.startswith("# "):
-        return LeafNode("h1", text.strip("#"))
+        return LeafNode("h1", text.strip("# "))
     elif text.startswith("## "):
-        return LeafNode("h2", text.strip("#"))
+        return LeafNode("h2", text.strip("# "))
     elif text.startswith("### "):
-        return LeafNode("h3", text.strip("#"))
+        return LeafNode("h3", text.strip("# "))
     elif text.startswith("#### "):
-        return LeafNode("h4", text.strip("#"))
+        return LeafNode("h4", text.strip("# "))
     elif text.startswith("##### "):
-        return LeafNode("h5", text.strip("#"))
+        return LeafNode("h5", text.strip("# "))
     elif text.startswith("###### "):
-        return LeafNode("h6", text.strip("#"))
+        return LeafNode("h6", text.strip("# "))
     
 def block_para_into_node(block):
     text = ' '.join(block[0].split('\n')).strip()
     stylized_text = "".join(text_to_children(text))
     return LeafNode("p", stylized_text)
+
+def block_quote_into_node(block):
+    lines = block[0].split("\n")
+    new_lines = []
+    for line in lines:
+        if not line.startswith(">"):
+            raise ValueError("invalid quote block")
+        new_lines.append(line.lstrip(">").strip())
+    content = " ".join(new_lines)
+    children = "".join(text_to_children(content))
+    return LeafNode("blockquote", children)
+
+
 
 def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
@@ -100,8 +114,11 @@ def markdown_to_html_node(markdown):
                 child_nodes.append(block_code_into_node(block[0]))
             case "p":
                 child_nodes.append(block_para_into_node(block))
+            case "blockquote":
+                child_nodes.append(block_quote_into_node(block))
             case _:
-                stylized_text = "".join(text_to_children(block[0])).replace("\n", "").strip()
+                stylized_text = "".join(text_to_children(block[0])).replace("\n", "").replace(">>", " ").strip(">")
                 child_nodes.append(LeafNode(block[1], stylized_text))
    
     return wrapper
+

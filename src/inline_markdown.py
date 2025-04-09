@@ -107,14 +107,14 @@ def split_nodes_link(old_nodes):
 
 def extract_markdown_images(sample_text):
     img_node_alt_text= re.findall(r"\!\[(.*?)\]", sample_text)
-    img_node_url = re.findall(r"\((https?://[^\s)]+)\)", sample_text)
+    img_node_url = re.findall(r"\(((?:https?://[^\s)]+)|(?:[^)\s]+))\)", sample_text)
 
     md_images = list(zip(img_node_alt_text, img_node_url))
     return md_images
     
 def extract_markdown_link(sample_text):
     link_node_alt_text= re.findall(r"\[(.*?)\]", sample_text)
-    link_node_url= re.findall(r"\((https?://[^\s)]+)\)", sample_text)
+    link_node_url= re.findall(r"\(((?:https?://[^\s)]+)|(?:[^)\s]+))\)", sample_text)
     md_links = list(zip(link_node_alt_text, link_node_url))
     return md_links
 

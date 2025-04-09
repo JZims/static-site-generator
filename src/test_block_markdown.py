@@ -1,7 +1,7 @@
 import unittest
 from block_markdown import markdown_to_blocks, block_to_block_type, markdown_to_html_node
 from block_markdown import BlockType
-from extract_title import extract_title
+from generate_page import extract_title, generate_page
 
 class TestBlockMarkdown(unittest.TestCase):
 
